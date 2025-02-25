@@ -5,8 +5,9 @@ date: "2025-02-25"
 output: html_document
 ---
 ```{r}
+options(repos = c(CRAN = "https://cloud.r-project.org/"))
+
 install.packages(c("gsl","ggplot2","remotes","rmarkdown","UpSetR"))
-# If you haven't install Bioconductor yet:
 install.packages("BiocManager")
 BiocManager::install()
 
