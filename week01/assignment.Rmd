@@ -1,0 +1,13 @@
+---
+title: "Submission Week 1"
+author: "Antea Busato"
+date: "2025-02-25"
+output: html_document
+---
+```{r}
+library(epiwraps)
+```
+
+```{r}
+sessionInfo()
+```
