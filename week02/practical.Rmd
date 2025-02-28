@@ -1,6 +1,6 @@
 ---
 title: "Practical - Week 2"
-author: "Pierre-Luc"
+author: "Pierre-Luc & Antea Bantea"
 date: "2024-03-01"
 output: html_document
 ---
@@ -18,28 +18,37 @@ suppressPackageStartupMessages({
 ah <- AnnotationHub()
 q <- query(ah, c("Drosophila", "EnsDb"))
 
-ensdb <- ah[["AH113629"]]
+ensdb <- ah[["AH113629"]] # ensamble db object is a gene annotation object, take the newest one, but my version is newer haha, so "AH113629" is actually the 5th.
 ensdb
 ```
 
+GRanges is a vector of genomic locations and associated annotations. Each element in the vector is comprised of a sequence name, an interval, a strand, and optional metadata columns (e.g. score, GC content, etc.).
+
+**genes()** function to see the GRanges object, 3 things: 
+1. sequence name = chromosome, 
+2. coordinates where in the chromosome does the gene begin and end, 
+3. the strand, because transcripts are transcribed on one strand. 
+
+Everything right from the bar can change.
+
 ```{r}
-g <- genes(ensdb)
+g <- genes(ensdb) # fetch all the genes then filter. 
+# We could also filter wehn downloading with g <- genes(ensdb, filter = Gene BiotypeFilter("protein_coding"))
 head(g)
 
 table(g$gene_biotype)
 
 length(g)
-pcg <- g[which(g$gene_biotype=="protein_coding")]
+pcg <- g[which(g$gene_biotype=="protein_coding")] # only the coding ones: not 24'278 anymore, but 13'986
 length(pcg)
 
-ex <- exons(ensdb)
+ex <- exons(ensdb) # fetch all the exons, we could do <-exons(ensdb, columns = c("transcript_id, "gene_name")) to have more information what exon it is.
 ex <- exonsBy(ensdb) # same but grouped by transcript
 head(ex)
 
 numExonsPerTx <- lengths(ex)
 head(numExonsPerTx)
 hist(numExonsPerTx)
-
 
 # we limit ourselves to protein-coding transcripts:
 exsPerTx <- exonsBy(ensdb, column=c("tx_id","tx_biotype"), 
@@ -52,11 +61,10 @@ Selecting transcripts from one chromosome:
 
 ```{r}
 txs <- transcripts(ensdb)
-txs_2L <- txs[seqnames(txs)=="2L"] 
+txs_2L <- txs[seqnames(txs)=="2L"] # Seqnames function is used to access the chromosome. 
+# Seqnames, star, end, or the strand => use the function of this name.
+# For metadata columns you can use the usual syntax.
 ```
-
-
-
 
 Example of overlapping GRanges objects:
 
@@ -68,5 +76,41 @@ gr <- GRanges(seqname=c("2L","2L"),
                       end=c(14615552+10, 14616303+20)))
 gr
 ```
+
+Or:
+
+```{r}
+myRegions <- as(c("2L:1200000-1200100", "2L:13513712-13519712"), "GRanges")
+myRegions
+
+head(overlapsAny(genes, myRegions))
+
+overlaps <- findOverlaps(genes, myRegions)
+head(overlaps)
+
+genes[2429]
+myRegions$gene <- NA
+myRegions[subjectHits(overlaps)] <- genes$gene_name[queryHits(overlaps)]
+cbind(mcols(myRegions)[subjectHits(overlaps),],
+      mcols(genes)[queryHits(overlaps),])
+head(myRegions)
+
+overlaps2 <- findOverlapPairs(genes, myRegions)
+
+genes[which(overlapAny(genes, myRegions))]
+
+d <- distanceToNearest(myRegions, genes)
+head(d)
+```
+
+Don't know what to put here
+
+```{r}
+plotSignalTracks(list(myRegions=myRegions), region = "2L:13513712-13519712", ensdb =  ensdb, extend = 10000, transcripts="full")
+
+# Asking for an identifier, does not center on an arbituary region like above but focuses on a gene.
+plotSignalTracks(list(myRegions=myRegions), region = "TrxT", ensdb =  ensdb, extend = 10000, transcripts="full")
+```
+
 
 
